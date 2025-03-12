@@ -1,0 +1,33 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+def hist_match(source, reference):
+    matched = source.copy()
+    for i in range(3):
+        src_hist, _ = np.histogram(source[:, :, i].ravel(), 256, [0, 256])
+        ref_hist, _ = np.histogram(reference[:, :, i].ravel(), 256, [0, 256])
+        src_cdf = np.cumsum(src_hist) / src_hist.sum()
+        ref_cdf = np.cumsum(ref_hist) / ref_hist.sum()
+        mapping = np.interp(src_cdf, ref_cdf, np.arange(256))
+        matched[:, :, i] = np.interp(source[:, :, i], np.arange(256), mapping)
+    return np.uint8(matched)
+
+src = cv2.imread('a1.webp')
+ref = cv2.imread('a2.png')
+
+if src is None or ref is None:
+    print("Error: Image not found. Check file paths.")
+else:
+    src = cv2.cvtColor(src, cv2.COLOR_BGR2RGB)
+    ref = cv2.cvtColor(ref, cv2.COLOR_BGR2RGB)
+    matched = hist_match(src, ref)
+    images = [src, ref, matched]
+    titles = ['Source Image', 'Reference Image', 'Histogram Matched Image']
+    plt.figure(figsize=(12, 4))
+    for i in range(3):
+        plt.subplot(1, 3, i+1)
+        plt.imshow(images[i])
+        plt.title(titles[i])
+        plt.axis('off')
+    plt.show()
